@@ -33,10 +33,9 @@ def extract_article_urls(document: str, _: bool) -> List[str]:
 
 
 def parse_article_content(document: str, include_reporter_name: bool) -> str:
-    strainer = SoupStrainer("div", attrs={"id": "dic_area"})
+    strainer = SoupStrainer("article", attrs={"id": "dic_area"})
     document = BeautifulSoup(document, "lxml", parse_only=strainer)
-    content = document.find("div")
-
+    content = document.find("article")
     # Skip invalid articles which do not contain news contents.
     if content is None:
         raise ValueError("there is no any news article content.")

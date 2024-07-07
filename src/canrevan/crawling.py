@@ -122,7 +122,7 @@ class Crawler:
         parse_fn: Optional[Callable[[str], T]] = None,
         update_fn: Optional[Callable[[], None]] = None,
     ) -> int:
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding="utf8") as fp:
             # A callback function to reduce collected data to the output file.
             def callback_fn(data: Optional[T]):
                 if update_fn is not None:

@@ -14,7 +14,7 @@ DEFAULT_USER_AGENT_STRING = (
     "Safari/537.36"
 )
 
-def crawl(category: int, start_date: str, end_date: str, skip_days: int = 1, max_page: int = 10, include_reporter_name: bool = False, max_jobs: int=500, num_cores: int=4, user_agent: str=DEFAULT_USER_AGENT_STRING, timeout: float | None = 5):
+def crawl(categories: List[int], start_date: str, end_date: str, skip_days: int = 1, max_page: int = 10, include_reporter_name: bool = False, max_jobs: int=500, num_cores: int=4, user_agent: str=DEFAULT_USER_AGENT_STRING, timeout: float | None = 5):
     crawler = Crawler(
         concurrent_tasks=max_jobs,
         num_parsing_processes=num_cores,
@@ -24,8 +24,8 @@ def crawl(category: int, start_date: str, end_date: str, skip_days: int = 1, max
 
     nav_urls = [
         f"https://news.naver.com/main/list.nhn?mode=LSD&mid=shm"
-        f"&sid1={cat}&date={date}&page={page}"
-        for cat in category
+        f"&sid1={category}&date={date}&page={page}"
+        for category in categories
         for date in utils.drange(start_date, end_date, skip_days)
         for page in range(1, max_page + 1)
     ]

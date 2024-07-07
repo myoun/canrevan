@@ -4,6 +4,7 @@ import warnings
 from asyncio import Semaphore
 from concurrent.futures import Executor, ProcessPoolExecutor
 from typing import Callable, Dict, Iterable, List, Optional, TypeVar
+import json
 
 from aiohttp import ClientSession, ClientTimeout
 
@@ -131,16 +132,19 @@ class Crawler:
                 if data is not None:
                     # Increase the counter which indicates the number of actual reduced
                     # items.
-                    nonlocal written
+                    nonlocal written, articles
                     written += 1
 
-                    fp.write(str(data) + "\n")
+                    articles.append(data)
 
             # Get event loop and set to ignore `SSLError`s from `aiohttp` module.
             loop = asyncio.get_event_loop()
             utils.ignore_aiohttp_ssl_error(loop)
 
             written = 0
+            articles = []
             loop.run_until_complete(self._crawl_and_reduce(urls, include_reporter_name, parse_fn, callback_fn))
+
+            json.dump(articles, fp, ensure_ascii=False)
 
         return written

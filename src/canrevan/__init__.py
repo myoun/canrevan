@@ -3,9 +3,9 @@ from typing import List
 
 import tqdm
 
-import parsing as parsing
-import utils as utils
-from crawling import Crawler
+import canrevan.parsing as parsing
+import canrevan.utils as utils
+from canrevan.crawling import Crawler
 
 DEFAULT_USER_AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -14,7 +14,36 @@ DEFAULT_USER_AGENT_STRING = (
     "Safari/537.36"
 )
 
+def crawl(category: int, start_date: str, end_date: str, skip_days: int = 1, max_page: int = 10, include_reporter_name: bool = False, max_jobs: int=500, num_cores: int=4, user_agent: str=DEFAULT_USER_AGENT_STRING, timeout: float | None = 5):
+    crawler = Crawler(
+        concurrent_tasks=max_jobs,
+        num_parsing_processes=num_cores,
+        request_headers={"user-agent": user_agent},
+        request_timeout=timeout,
+    )
 
+    nav_urls = [
+        f"https://news.naver.com/main/list.nhn?mode=LSD&mid=shm"
+        f"&sid1={cat}&date={date}&page={page}"
+        for cat in category
+        for date in utils.drange(start_date, end_date, skip_days)
+        for page in range(1, max_page + 1)
+    ]
+
+    article_urls = crawler.reduce_to_array(
+        nav_urls, include_reporter_name, parse_fn=parsing.extract_article_urls,
+    )
+    
+    article_urls = {url for urls in article_urls for url in urls}
+
+
+    total_contents = crawler.reduce_to_array(
+        article_urls,
+        include_reporter_name,
+        parse_fn=parsing.parse_article_content,
+    )
+
+    return total_contents
 
 def _main():
     args = _create_argument_parser().parse_args()
@@ -73,7 +102,7 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--output_path", default="첫줄포함.txt", help="output file path"
+        "--output_path", default="articles.json", help="output file path"
     )
     parser.add_argument(
         "--category",

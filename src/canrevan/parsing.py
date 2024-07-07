@@ -4,7 +4,7 @@ from typing import List
 
 from bs4 import BeautifulSoup, SoupStrainer
 
-import utils as utils
+import canrevan.utils as utils
 
 
 def extract_article_urls(document: str, _: bool) -> List[str]:
@@ -31,8 +31,34 @@ def extract_article_urls(document: str, _: bool) -> List[str]:
 
     return article_urls
 
+def extract_article_title(document: str) -> str:
+    strainer = SoupStrainer("h2", id="title_area", class_="media_end_head_headline")
+    title_element = BeautifulSoup(document, "lxml", parse_only=strainer).find("h2", id="title_area", class_="media_end_head_headline")
+
+    if title_element:
+        # Get the text content of the title element
+        title_text = title_element.get_text(strip=True)
+        return title_text
+
+    return ""
+
+def extract_timestamp(document: str) -> str:
+    strainer = SoupStrainer("span", class_="media_end_head_info_datestamp_time _ARTICLE_DATE_TIME")
+    timestamp_element = BeautifulSoup(document, "lxml", parse_only=strainer).find("span", class_="media_end_head_info_datestamp_time _ARTICLE_DATE_TIME")
+
+    if timestamp_element:
+        # Get the value of the data-date-time attribute
+        timestamp_str = timestamp_element.get("data-date-time")
+        if timestamp_str:
+            # Extract YYYYMMDD format from "2024-01-15 20:28:01"
+            timestamp = timestamp_str.split(" ")[0].replace("-", "")
+            return timestamp
+
+    return ""
 
 def parse_article_content(document: str, include_reporter_name: bool) -> str:
+    original_document = document
+
     strainer = SoupStrainer("article", attrs={"id": "dic_area"})
     document = BeautifulSoup(document, "lxml", parse_only=strainer)
     content = document.find("article")
@@ -71,5 +97,10 @@ def parse_article_content(document: str, include_reporter_name: bool) -> str:
     # Remove empty string
     if content == "":
         raise ValueError("there is no news article content.")
+    
+    timestamp = extract_timestamp(original_document)
 
-    return json.encoder.encode_basestring(content)
+    # Extract article title using the original document
+    title = extract_article_title(original_document)
+
+    return {"timestamp": timestamp, "title": title, "content": json.encoder.encode_basestring(content)}
